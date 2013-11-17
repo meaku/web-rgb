@@ -1,5 +1,10 @@
-/* Web_AjaxRGB_mobile.pde - example sketch for Webduino library */
-/* -  offers web-based slider controllers for RGB led  - */
+/*
+ * Controls a BlinkM RGB-LED via Browser
+ * The code is mostly taken from https://github.com/sirleech/Webduino/blob/master/examples/Web_AjaxRGB_mobile/Web_AjaxRGB_mobile.ino
+ * I added the BlinkM specific code 
+ * @author Michael Jaser <michael.jaser@peerigon.com>
+ * 
+ */
 
 #include "SPI.h"
 #include "Ethernet.h"
@@ -13,22 +18,19 @@ static uint8_t mac[6] = { 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED };
 // CHANGE THIS TO MATCH YOUR HOST NETWORK
 static uint8_t ip[4] =  { 192, 168, 0, 177 }; // area 51!
 
-/* all URLs on this server will start with /rgb because of how we
- * define the PREFIX value.  We also will listen on port 80, the
- * standard HTTP service port */
 #define PREFIX "/rgb"
 WebServer webserver(PREFIX, 80);
 
 #define blinkm_addr 0x00
 
-byte red = 0;            //integer for red darkness
+byte red = 0;            //byte for red darkness
 byte blue = 0;           //integer for blue darkness
 byte green = 0;          //integer for green darkness
 
 /* This command is set as the default command for the server.  It
  * handles both GET and POST requests.  For a GET, it returns a simple
  * page with some buttons.  For a POST, it saves the value posted to
- * the red/green/blue variable, affecting the output of the speaker */
+ * the red/green/blue variable, affecting the color of the blinkM-LED */
 void rgbCmd(WebServer &server, WebServer::ConnectionType type, char *, bool)
 {
   if (type == WebServer::POST)
@@ -37,15 +39,8 @@ void rgbCmd(WebServer &server, WebServer::ConnectionType type, char *, bool)
     char name[16], value[16];
     do
     {
-      /* readPOSTparam returns false when there are no more parameters
-       * to read from the input.  We pass in buffers for it to store
-       * the name and value strings along with the length of those
-       * buffers. */
       repeat = server.readPOSTparam(name, 16, value, 16);
 
-      /* this is a standard string comparison function.  It returns 0
-       * when there's an exact match.  We're looking for a parameter
-       * named red/green/blue here. */
       if (strcmp(name, "red") == 0)
       {
         red = String(value).toInt();
@@ -70,8 +65,6 @@ void rgbCmd(WebServer &server, WebServer::ConnectionType type, char *, bool)
     // after procesing the POST data, tell the web browser to reload
     // the page using a GET method. 
     server.httpSeeOther(PREFIX);
-//    Serial.print(name);
-//    Serial.println(value);
 
     return;
   }
@@ -121,8 +114,6 @@ void setup()
   // setup the Ehternet library to talk to the Wiznet board
   Ethernet.begin(mac, ip);
 
-  /* register our default command (activated with the request of
-   * http://x.x.x.x/rgb */
   webserver.setDefaultCommand(&rgbCmd);
 
   /* start the server to wait for connections */
